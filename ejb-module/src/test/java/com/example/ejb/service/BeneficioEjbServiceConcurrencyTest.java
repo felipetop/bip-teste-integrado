@@ -1,5 +1,6 @@
-package com.example.ejb;
+package com.example.ejb.service;
 
+import com.example.ejb.domain.Beneficio;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.DisplayName;

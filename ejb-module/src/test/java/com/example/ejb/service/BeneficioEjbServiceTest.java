@@ -1,5 +1,6 @@
-package com.example.ejb;
+package com.example.ejb.service;
 
+import com.example.ejb.domain.Beneficio;
 import com.example.ejb.exception.SaldoInsuficienteException;
 import com.example.ejb.exception.TransferenciaInvalidaException;
 import jakarta.persistence.EntityManager;

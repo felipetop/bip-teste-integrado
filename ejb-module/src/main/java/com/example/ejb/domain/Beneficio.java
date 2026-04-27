@@ -1,4 +1,4 @@
-package com.example.ejb;
+package com.example.ejb.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
