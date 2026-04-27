@@ -2,7 +2,7 @@
 
 Solução do desafio técnico de fullstack proposto pela BIP. Stack em camadas com EJB + Spring Boot + Angular consumindo H2 (dev/test) e Postgres (prod).
 
-A especificação original do desafio está em [`docs/README.md`](docs/README.md).
+A especificação original do desafio está em [`docs/README.md`](docs/README.md). O contrato OpenAPI da API está versionado em [`docs/openapi.yaml`](docs/openapi.yaml) e pode ser importado em ferramentas como Postman, Insomnia ou usado para gerar clientes (TypeScript, etc.).
 
 ## Stack
 
@@ -42,6 +42,7 @@ A aplicação sobe em `http://localhost:8080`.
 | `GET /actuator/health` | Health check |
 | `GET /swagger-ui.html` | Swagger UI |
 | `GET /v3/api-docs` | OpenAPI JSON |
+| `GET /v3/api-docs.yaml` | OpenAPI YAML |
 | `GET /h2-console` | Console do H2 — JDBC URL `jdbc:h2:mem:bipdb`, user `sa`, senha vazia |
 
 ## Rodar testes

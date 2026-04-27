@@ -1,0 +1,188 @@
+openapi: 3.0.1
+info:
+  title: BIP Benefícios API
+  description: API REST para gestão de benefícios e transferências entre eles. Inclui
+    CRUD de benefícios e operação de transferência com controle de concorrência (lock
+    pessimista) executada via camada EJB.
+  contact:
+    name: Felipe
+    email: felipejorgetop@gmail.com
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+paths:
+  /api/v1/beneficios/{id}:
+    get:
+      tags:
+      - beneficio-controller
+      operationId: buscarPorId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BeneficioResponse'
+    put:
+      tags:
+      - beneficio-controller
+      operationId: atualizar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BeneficioRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BeneficioResponse'
+    delete:
+      tags:
+      - beneficio-controller
+      operationId: desativar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: No Content
+  /api/v1/transferencias:
+    post:
+      tags:
+      - transferencia-controller
+      operationId: transferir
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferenciaRequest'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/TransferenciaResponse'
+  /api/v1/beneficios:
+    get:
+      tags:
+      - beneficio-controller
+      operationId: listar
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BeneficioResponse'
+    post:
+      tags:
+      - beneficio-controller
+      operationId: criar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BeneficioRequest'
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/BeneficioResponse'
+components:
+  schemas:
+    BeneficioRequest:
+      required:
+      - nome
+      - valor
+      type: object
+      properties:
+        nome:
+          maxLength: 100
+          minLength: 0
+          type: string
+        descricao:
+          maxLength: 255
+          minLength: 0
+          type: string
+        valor:
+          minimum: 0.00
+          exclusiveMinimum: false
+          type: number
+        ativo:
+          type: boolean
+    BeneficioResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        descricao:
+          type: string
+        valor:
+          type: number
+        ativo:
+          type: boolean
+    TransferenciaRequest:
+      required:
+      - amount
+      - fromId
+      - toId
+      type: object
+      properties:
+        fromId:
+          type: integer
+          format: int64
+        toId:
+          type: integer
+          format: int64
+        amount:
+          minimum: 0.01
+          exclusiveMinimum: false
+          type: number
+    TransferenciaResponse:
+      type: object
+      properties:
+        fromId:
+          type: integer
+          format: int64
+        toId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+        saldoOrigem:
+          type: number
+        saldoDestino:
+          type: number
