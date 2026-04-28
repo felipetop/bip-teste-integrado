@@ -1,75 +1,165 @@
-<section class="max-w-2xl mx-auto px-6 py-8 space-y-6">
+<section class="max-w-7xl mx-auto px-6 py-8 space-y-6">
   <header>
     <h1 class="text-2xl font-semibold text-slate-100">Transferir entre benefícios</h1>
     <p class="text-slate-400 text-sm mt-1">
-      Selecione origem, destino e valor. Operação atômica com lock pessimista no backend.
+      Selecione origem, destino e o valor. A operação é atômica com lock pessimista no servidor.
     </p>
   </header>
 
-  <form [formGroup]="form" (ngSubmit)="transferir()" class="space-y-5 bg-slate-800 border border-slate-700 rounded-lg p-6">
-    <div class="space-y-2">
-      <label for="fromId" class="block text-sm font-medium text-slate-300">Origem</label>
-      <select
-        id="fromId"
-        formControlName="fromId"
-        class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-      >
-        <option [ngValue]="null" disabled>Selecione um benefício</option>
-        @for (b of opcoes(); track b.id) {
-          <option [ngValue]="b.id">{{ b.nome }} — {{ b.valor | currency: 'BRL' }}</option>
-        }
-      </select>
-      @if (saldoOrigem() !== null) {
-        <p class="text-slate-400 text-xs">
-          Saldo disponível: <span class="text-emerald-400 font-medium">{{ saldoOrigem() | currency: 'BRL' }}</span>
-        </p>
-      }
-    </div>
+  <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr] gap-6 items-stretch">
 
-    <div class="space-y-2">
-      <label for="toId" class="block text-sm font-medium text-slate-300">Destino</label>
-      <select
-        id="toId"
-        formControlName="toId"
-        class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-      >
-        <option [ngValue]="null" disabled>Selecione um benefício</option>
-        @for (b of opcoes(); track b.id) {
-          <option [ngValue]="b.id">{{ b.nome }} — {{ b.valor | currency: 'BRL' }}</option>
-        }
-      </select>
-      @if (form.hasError('origemIgualDestino') && form.controls.toId.touched) {
-        <p class="text-rose-400 text-xs">Origem e destino devem ser diferentes.</p>
-      }
-    </div>
-
-    <div class="space-y-2">
-      <label for="amount" class="block text-sm font-medium text-slate-300">Valor (R$)</label>
+    <!-- Coluna ORIGEM -->
+    <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col">
+      <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">Origem</h2>
       <input
-        id="amount"
-        type="number"
-        step="0.01"
-        min="0.01"
-        formControlName="amount"
-        class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-        placeholder="0,00"
+        type="text"
+        [value]="buscaOrigem()"
+        (input)="buscaOrigem.set($any($event.target).value)"
+        placeholder="Buscar origem..."
+        class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 mb-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
       />
-      @if (form.controls.amount.touched && form.controls.amount.invalid) {
-        <p class="text-rose-400 text-xs">
-          @if (form.controls.amount.hasError('required')) {
-            Valor é obrigatório.
-          } @else if (form.controls.amount.hasError('min')) {
-            Valor deve ser maior que zero.
-          }
+      <div class="space-y-2 overflow-y-auto max-h-96 pr-1">
+        @for (b of opcoesOrigem(); track b.id) {
+          <button
+            type="button"
+            (click)="selecionarOrigem(b.id)"
+            [class]="fromId() === b.id
+              ? 'w-full text-left rounded-md border border-sky-500 bg-sky-500/10 p-3 transition-all'
+              : 'w-full text-left rounded-md border border-slate-700 bg-slate-900/50 p-3 hover:border-slate-500 hover:bg-slate-700/50 transition-all'"
+          >
+            <div class="flex items-center justify-between">
+              <span class="font-medium text-slate-100">{{ b.nome }}</span>
+              @if (fromId() === b.id) {
+                <span class="text-sky-400 text-xs">✓ selecionado</span>
+              }
+            </div>
+            <div class="text-xs text-slate-400 mt-0.5 truncate">{{ b.descricao }}</div>
+            <div class="text-emerald-400 text-sm font-medium tabular-nums mt-1">
+              {{ b.valor | currency: 'BRL' }}
+            </div>
+          </button>
+        } @empty {
+          <p class="text-slate-500 text-sm text-center py-8">Nenhum benefício encontrado.</p>
+        }
+      </div>
+    </div>
+
+    <!-- Coluna CENTRAL: seta + valor + simulação -->
+    <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col items-center justify-center space-y-5">
+      <div class="flex items-center gap-2 text-sky-400" [class.animate-pulse]="podeEnviar()">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+        </svg>
+        <span class="text-xs uppercase tracking-wider font-medium">Transferência</span>
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+        </svg>
+      </div>
+
+      <div class="w-full space-y-2">
+        <label for="amount" class="block text-sm font-medium text-slate-300 text-center">Valor (R$)</label>
+        <input
+          id="amount"
+          type="text"
+          inputmode="decimal"
+          mask="separator.2"
+          [ngModel]="amount()"
+          (ngModelChange)="amount.set($event === '' ? null : +$event)"
+          name="amount"
+          class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-3 text-2xl text-center text-slate-100 tabular-nums placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+          placeholder="R$ 0,00"
+        />
+      </div>
+
+      @if (origem() && destino() && valor() > 0) {
+        <div class="w-full bg-slate-900/50 border border-slate-700 rounded-md p-3 space-y-2 text-xs">
+          <div class="text-slate-400 uppercase tracking-wider font-medium text-center mb-2">
+            Simulação
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400 truncate pr-2">{{ origem()?.nome }}</span>
+            <span class="tabular-nums text-slate-500">{{ origem()?.valor | currency: 'BRL' }}</span>
+          </div>
+          <div class="flex items-center justify-between font-medium">
+            <span class="text-slate-300">→ após</span>
+            <span
+              class="tabular-nums"
+              [class]="saldoSuficiente() ? 'text-emerald-400' : 'text-rose-400'"
+            >
+              {{ saldoOrigemApos() | currency: 'BRL' }}
+              @if (!saldoSuficiente()) { <span class="text-xs">⚠</span> }
+            </span>
+          </div>
+          <div class="border-t border-slate-700 pt-2 mt-2"></div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400 truncate pr-2">{{ destino()?.nome }}</span>
+            <span class="tabular-nums text-slate-500">{{ destino()?.valor | currency: 'BRL' }}</span>
+          </div>
+          <div class="flex items-center justify-between font-medium">
+            <span class="text-slate-300">→ após</span>
+            <span class="tabular-nums text-sky-400">{{ saldoDestinoApos() | currency: 'BRL' }}</span>
+          </div>
+        </div>
+      } @else {
+        <p class="text-slate-500 text-xs text-center">
+          Selecione origem, destino e informe um valor.
         </p>
       }
     </div>
 
-    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-700">
-      <app-button variant="ghost" (click)="cancelar()">Cancelar</app-button>
-      <app-button type="submit" variant="primary" [loading]="enviando()" [disabled]="form.invalid">
-        Transferir
-      </app-button>
+    <!-- Coluna DESTINO -->
+    <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col">
+      <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">Destino</h2>
+      <input
+        type="text"
+        [value]="buscaDestino()"
+        (input)="buscaDestino.set($any($event.target).value)"
+        placeholder="Buscar destino..."
+        class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 mb-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+      />
+      <div class="space-y-2 overflow-y-auto max-h-96 pr-1">
+        @for (b of opcoesDestino(); track b.id) {
+          <button
+            type="button"
+            (click)="selecionarDestino(b.id)"
+            [class]="toId() === b.id
+              ? 'w-full text-left rounded-md border border-sky-500 bg-sky-500/10 p-3 transition-all'
+              : 'w-full text-left rounded-md border border-slate-700 bg-slate-900/50 p-3 hover:border-slate-500 hover:bg-slate-700/50 transition-all'"
+          >
+            <div class="flex items-center justify-between">
+              <span class="font-medium text-slate-100">{{ b.nome }}</span>
+              @if (toId() === b.id) {
+                <span class="text-sky-400 text-xs">✓ selecionado</span>
+              }
+            </div>
+            <div class="text-xs text-slate-400 mt-0.5 truncate">{{ b.descricao }}</div>
+            <div class="text-emerald-400 text-sm font-medium tabular-nums mt-1">
+              {{ b.valor | currency: 'BRL' }}
+            </div>
+          </button>
+        } @empty {
+          <p class="text-slate-500 text-sm text-center py-8">Nenhum benefício encontrado.</p>
+        }
+      </div>
     </div>
-  </form>
+  </div>
+
+  <div class="flex items-center justify-end gap-2">
+    <app-button variant="ghost" (click)="cancelar()">Cancelar</app-button>
+    <app-button
+      type="button"
+      variant="primary"
+      [loading]="enviando()"
+      [disabled]="!podeEnviar()"
+      (click)="transferir()"
+    >
+      @if (valor() > 0) {
+        Transferir {{ valor() | currency: 'BRL' }}
+      } @else {
+        Transferir
+      }
+    </app-button>
+  </div>
 </section>

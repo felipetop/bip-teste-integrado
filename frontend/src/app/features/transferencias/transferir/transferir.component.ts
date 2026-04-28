@@ -1,17 +1,10 @@
 import { CurrencyPipe } from '@angular/common';
-import {
-  AbstractControl,
-  FormControl,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { startWith } from 'rxjs';
+import { NgxMaskDirective } from 'ngx-mask';
 import { BeneficioService } from '../../../core/api/beneficio.service';
+import { BeneficioResponse } from '../../../core/api/models';
 import { TransferenciaService } from '../../../core/api/transferencia.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -19,44 +12,73 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
 @Component({
   selector: 'app-transferir',
   standalone: true,
-  imports: [ReactiveFormsModule, CurrencyPipe, ButtonComponent],
+  imports: [FormsModule, CurrencyPipe, ButtonComponent, NgxMaskDirective],
   templateUrl: './transferir.component.html',
 })
 export class TransferirComponent implements OnInit {
-  private readonly fb = inject(NonNullableFormBuilder);
   private readonly transferenciaService = inject(TransferenciaService);
   private readonly beneficioService = inject(BeneficioService);
   private readonly notifier = inject(NotificationService);
   private readonly router = inject(Router);
 
+  protected readonly buscaOrigem = signal('');
+  protected readonly buscaDestino = signal('');
+  protected readonly fromId = signal<number | null>(null);
+  protected readonly toId = signal<number | null>(null);
+  protected readonly amount = signal<number | null>(null);
   protected readonly enviando = signal(false);
 
-  protected readonly opcoes = computed(() =>
-    this.beneficioService.beneficios().filter((b) => b.ativo),
+  protected readonly opcoesOrigem = computed(() =>
+    this.filtrar(this.buscaOrigem()).filter((b) => b.id !== this.toId()),
   );
 
-  protected readonly form = this.fb.group(
-    {
-      fromId: this.fb.control<number | null>(null, [Validators.required]) as FormControl<number | null>,
-      toId: this.fb.control<number | null>(null, [Validators.required]) as FormControl<number | null>,
-      amount: this.fb.control<number | null>(null, [
-        Validators.required,
-        Validators.min(0.01),
-      ]) as FormControl<number | null>,
-    },
-    { validators: [origemDestinoDiferentes] },
+  protected readonly opcoesDestino = computed(() =>
+    this.filtrar(this.buscaDestino()).filter((b) => b.id !== this.fromId()),
   );
 
-  private readonly fromIdSignal = toSignal(
-    this.form.controls.fromId.valueChanges.pipe(startWith(this.form.controls.fromId.value)),
-    { initialValue: null as number | null },
+  private filtrar(termo: string) {
+    const t = termo.trim().toLowerCase();
+    return this.beneficioService
+      .beneficios()
+      .filter((b) => b.ativo)
+      .filter((b) => {
+        if (!t) return true;
+        return (
+          b.nome.toLowerCase().includes(t) ||
+          (b.descricao ?? '').toLowerCase().includes(t)
+        );
+      });
+  }
+
+  protected readonly origem = computed<BeneficioResponse | undefined>(() =>
+    this.beneficioService.beneficios().find((b) => b.id === this.fromId()),
   );
 
-  protected readonly saldoOrigem = computed(() => {
-    const id = this.fromIdSignal();
-    if (!id) return null;
-    return this.beneficioService.beneficios().find((b) => b.id === id)?.valor ?? null;
-  });
+  protected readonly destino = computed<BeneficioResponse | undefined>(() =>
+    this.beneficioService.beneficios().find((b) => b.id === this.toId()),
+  );
+
+  protected readonly valor = computed(() => this.amount() ?? 0);
+
+  protected readonly saldoOrigemApos = computed(
+    () => (this.origem()?.valor ?? 0) - this.valor(),
+  );
+
+  protected readonly saldoDestinoApos = computed(
+    () => (this.destino()?.valor ?? 0) + this.valor(),
+  );
+
+  protected readonly saldoSuficiente = computed(
+    () => (this.origem()?.valor ?? 0) >= this.valor() && this.valor() > 0,
+  );
+
+  protected readonly podeEnviar = computed(
+    () =>
+      !!this.origem() &&
+      !!this.destino() &&
+      this.fromId() !== this.toId() &&
+      this.saldoSuficiente(),
+  );
 
   ngOnInit(): void {
     if (this.beneficioService.beneficios().length === 0) {
@@ -64,20 +86,42 @@ export class TransferirComponent implements OnInit {
     }
   }
 
-  transferir(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+  selecionarOrigem(id: number): void {
+    if (this.fromId() === id) {
+      this.fromId.set(null);
       return;
     }
+    this.fromId.set(id);
+    if (this.toId() === id) {
+      this.toId.set(null);
+    }
+  }
 
-    const { fromId, toId, amount } = this.form.getRawValue();
+  selecionarDestino(id: number): void {
+    if (this.toId() === id) {
+      this.toId.set(null);
+      return;
+    }
+    this.toId.set(id);
+    if (this.fromId() === id) {
+      this.fromId.set(null);
+    }
+  }
+
+  transferir(): void {
+    if (!this.podeEnviar()) return;
+
     this.enviando.set(true);
     this.transferenciaService
-      .transferir({ fromId: fromId!, toId: toId!, amount: amount! })
+      .transferir({
+        fromId: this.fromId()!,
+        toId: this.toId()!,
+        amount: this.amount()!,
+      })
       .subscribe({
-        next: (resp) => {
+        next: () => {
           this.notifier.success(
-            `Transferência efetuada. Saldo de origem: R$ ${resp.saldoOrigem.toFixed(2)}`,
+            `Transferência efetuada: ${this.formatarMoeda(this.valor())}`,
           );
           this.router.navigate(['/beneficios']);
         },
@@ -88,13 +132,8 @@ export class TransferirComponent implements OnInit {
   cancelar(): void {
     this.router.navigate(['/beneficios']);
   }
-}
 
-function origemDestinoDiferentes(group: AbstractControl): ValidationErrors | null {
-  const fromId = group.get('fromId')?.value;
-  const toId = group.get('toId')?.value;
-  if (fromId && toId && fromId === toId) {
-    return { origemIgualDestino: true };
+  private formatarMoeda(v: number): string {
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
-  return null;
 }
