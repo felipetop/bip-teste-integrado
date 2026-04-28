@@ -1,4 +1,75 @@
-<section class="max-w-2xl mx-auto px-6 py-8">
-  <h1 class="text-2xl font-semibold text-slate-100">Transferir entre benefícios</h1>
-  <p class="text-slate-400 text-sm mt-1">Em construção — formulário será implementado em seguida.</p>
+<section class="max-w-2xl mx-auto px-6 py-8 space-y-6">
+  <header>
+    <h1 class="text-2xl font-semibold text-slate-100">Transferir entre benefícios</h1>
+    <p class="text-slate-400 text-sm mt-1">
+      Selecione origem, destino e valor. Operação atômica com lock pessimista no backend.
+    </p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="transferir()" class="space-y-5 bg-slate-800 border border-slate-700 rounded-lg p-6">
+    <div class="space-y-2">
+      <label for="fromId" class="block text-sm font-medium text-slate-300">Origem</label>
+      <select
+        id="fromId"
+        formControlName="fromId"
+        class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+      >
+        <option [ngValue]="null" disabled>Selecione um benefício</option>
+        @for (b of opcoes(); track b.id) {
+          <option [ngValue]="b.id">{{ b.nome }} — {{ b.valor | currency: 'BRL' }}</option>
+        }
+      </select>
+      @if (saldoOrigem() !== null) {
+        <p class="text-slate-400 text-xs">
+          Saldo disponível: <span class="text-emerald-400 font-medium">{{ saldoOrigem() | currency: 'BRL' }}</span>
+        </p>
+      }
+    </div>
+
+    <div class="space-y-2">
+      <label for="toId" class="block text-sm font-medium text-slate-300">Destino</label>
+      <select
+        id="toId"
+        formControlName="toId"
+        class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+      >
+        <option [ngValue]="null" disabled>Selecione um benefício</option>
+        @for (b of opcoes(); track b.id) {
+          <option [ngValue]="b.id">{{ b.nome }} — {{ b.valor | currency: 'BRL' }}</option>
+        }
+      </select>
+      @if (form.hasError('origemIgualDestino') && form.controls.toId.touched) {
+        <p class="text-rose-400 text-xs">Origem e destino devem ser diferentes.</p>
+      }
+    </div>
+
+    <div class="space-y-2">
+      <label for="amount" class="block text-sm font-medium text-slate-300">Valor (R$)</label>
+      <input
+        id="amount"
+        type="number"
+        step="0.01"
+        min="0.01"
+        formControlName="amount"
+        class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+        placeholder="0,00"
+      />
+      @if (form.controls.amount.touched && form.controls.amount.invalid) {
+        <p class="text-rose-400 text-xs">
+          @if (form.controls.amount.hasError('required')) {
+            Valor é obrigatório.
+          } @else if (form.controls.amount.hasError('min')) {
+            Valor deve ser maior que zero.
+          }
+        </p>
+      }
+    </div>
+
+    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-700">
+      <app-button variant="ghost" (click)="cancelar()">Cancelar</app-button>
+      <app-button type="submit" variant="primary" [loading]="enviando()" [disabled]="form.invalid">
+        Transferir
+      </app-button>
+    </div>
+  </form>
 </section>
