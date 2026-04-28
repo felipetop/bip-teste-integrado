@@ -46,6 +46,7 @@ spring:
     init:
       mode: always
       data-locations: classpath:data.sql
+      encoding: UTF-8
   h2:
     console:
       enabled: true
