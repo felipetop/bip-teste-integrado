@@ -1,5 +1,5 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, input, model, output } from '@angular/core';
+import { Component, computed, input, output, signal } from '@angular/core';
 import { BeneficioResponse } from '../../../core/api/models';
 
 @Component({
@@ -13,7 +13,18 @@ export class BeneficiosPickerComponent {
   readonly placeholder = input<string>('Buscar...');
   readonly opcoes = input.required<BeneficioResponse[]>();
   readonly selectedId = input<number | null>(null);
-  readonly searchTerm = model<string>('');
 
-  readonly selecionado = output<number>();
+  readonly selecionado = output<BeneficioResponse>();
+
+  protected readonly searchTerm = signal('');
+
+  protected readonly filtradas = computed(() => {
+    const t = this.searchTerm().trim().toLowerCase();
+    if (!t) return this.opcoes();
+    return this.opcoes().filter(
+      (b) =>
+        b.nome.toLowerCase().includes(t) ||
+        (b.descricao ?? '').toLowerCase().includes(t),
+    );
+  });
 }

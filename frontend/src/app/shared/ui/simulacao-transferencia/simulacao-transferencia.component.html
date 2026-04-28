@@ -1,0 +1,61 @@
+<div class="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col items-center justify-center space-y-5">
+  <div class="flex items-center gap-2 text-sky-400" [class.animate-pulse]="podeAnimar()">
+    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+    </svg>
+    <span class="text-xs uppercase tracking-wider font-medium">Transferência</span>
+    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+    </svg>
+  </div>
+
+  <div class="w-full space-y-2">
+    <label for="amount" class="block text-sm font-medium text-slate-300 text-center">Valor (R$)</label>
+    <input
+      id="amount"
+      type="text"
+      inputmode="decimal"
+      mask="separator.2"
+      [ngModel]="amount()"
+      (ngModelChange)="amount.set($event === '' ? null : +$event)"
+      name="amount"
+      class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-3 text-2xl text-center text-slate-100 tabular-nums placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+      placeholder="R$ 0,00"
+    />
+  </div>
+
+  @if (origem() && destino() && valor() > 0) {
+    <div class="w-full bg-slate-900/50 border border-slate-700 rounded-md p-3 space-y-2 text-xs">
+      <div class="text-slate-400 uppercase tracking-wider font-medium text-center mb-2">Simulação</div>
+      <div class="flex items-center justify-between">
+        <span class="text-slate-400 truncate pr-2">{{ origem()?.nome }}</span>
+        <span class="tabular-nums text-slate-500">{{ origem()?.valor | currency: 'BRL' }}</span>
+      </div>
+      <div class="flex items-center justify-between font-medium">
+        <span class="text-slate-300">→ após</span>
+        <span
+          class="tabular-nums"
+          [class]="saldoSuficiente() ? 'text-emerald-400' : 'text-rose-400'"
+        >
+          {{ saldoOrigemApos() | currency: 'BRL' }}
+          @if (!saldoSuficiente()) { <span class="text-xs">⚠</span> }
+        </span>
+      </div>
+      <div class="border-t border-slate-700 pt-2 mt-2"></div>
+      <div class="flex items-center justify-between">
+        <span class="text-slate-400 truncate pr-2">{{ destino()?.nome }}</span>
+        <span class="tabular-nums text-slate-500">{{ destino()?.valor | currency: 'BRL' }}</span>
+      </div>
+      <div class="flex items-center justify-between font-medium">
+        <span class="text-slate-300">→ após</span>
+        <span class="tabular-nums text-sky-400">{{ saldoDestinoApos() | currency: 'BRL' }}</span>
+      </div>
+    </div>
+  } @else {
+    <p class="text-slate-500 text-xs text-center">
+      Selecione origem, destino e informe um valor.
+    </p>
+  }
+</div>

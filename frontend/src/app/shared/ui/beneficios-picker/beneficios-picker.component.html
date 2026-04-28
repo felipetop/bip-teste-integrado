@@ -12,10 +12,10 @@
   />
 
   <div class="space-y-2 overflow-y-auto max-h-96 pr-1">
-    @for (b of opcoes(); track b.id) {
+    @for (b of filtradas(); track b.id) {
       <button
         type="button"
-        (click)="selecionado.emit(b.id)"
+        (click)="selecionado.emit(b)"
         [class]="
           selectedId() === b.id
             ? 'w-full text-left rounded-md border border-sky-500 bg-sky-500/10 p-3 transition-all'
