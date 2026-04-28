@@ -13,6 +13,7 @@ RUN mvn -pl backend-module -am dependency:go-offline -B || true
 # Agora copia o código e empacota
 COPY ejb-module/src ejb-module/src
 COPY backend-module/src backend-module/src
+COPY db db
 RUN mvn -pl backend-module -am package -DskipTests -B
 
 # --- Runtime stage ---
