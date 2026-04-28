@@ -1,116 +1,141 @@
 # Desafio Fullstack Integrado
 
-Solução do desafio técnico de fullstack. Stack em camadas com EJB + Spring Boot + Angular consumindo H2 (dev/test) e Postgres (prod).
+Solução do desafio fullstack: EJB + Spring Boot + Angular, com correção de bug em transferência financeira concorrente.
 
-A especificação original do desafio está em [`docs/README.md`](docs/README.md). O contrato OpenAPI da API está versionado em [`docs/openapi.yaml`](docs/openapi.yaml) e pode ser importado em ferramentas como Postman, Insomnia ou usado para gerar clientes (TypeScript, etc.).
+## Demo
+
+- **Frontend:** https://bip-teste-integrado.surge.sh
+- **API:** https://bip-teste-integrado.fly.dev
+- **Swagger UI:** https://bip-teste-integrado.fly.dev/swagger-ui.html
+- **Health:** https://bip-teste-integrado.fly.dev/actuator/health
+
+A especificação original do desafio está em [`docs/README.md`](docs/README.md). O contrato OpenAPI versionado em [`docs/openapi.yaml`](docs/openapi.yaml) pode ser importado em Postman/Insomnia ou usado para gerar clientes.
 
 ## Stack
 
-- Java 17
-- Spring Boot 3.2.5 (REST + Data JPA + Validation + Actuator)
-- Jakarta EE (`@Stateless`, `@PersistenceContext`)
-- Hibernate 6
-- H2 (dev/test) — em memória
-- PostgreSQL (prod)
+**Backend**
+- Java 17, Spring Boot 3.2.5
+- Jakarta EE (`@Stateless`, `@PersistenceContext`) consumido como bean Spring
+- Spring Data JPA, Hibernate 6, Bean Validation
+- H2 em memória (todos os profiles)
 - springdoc-openapi (Swagger UI)
 - JUnit 5, Mockito, AssertJ
-- Angular (pendente)
 
-## Pré-requisitos
+**Frontend**
+- Angular 21 (standalone components, signals, control flow)
+- Tailwind CSS v4
+- ngx-mask (máscara de moeda BR)
+- Vitest
 
-- JDK 17+
-- Maven 3.8+
-
-Não precisa de Postgres nem Docker para rodar local — o backend usa H2 em memória no profile `dev` (default).
+**Infra**
+- Backend em Fly.io (Dockerfile multi-stage)
+- Frontend em Surge.sh
+- CI no GitHub Actions
 
 ## Rodar local
 
-Como o projeto é multi-módulo, na primeira vez precisa instalar o `ejb-module` no repositório local antes de subir o backend:
+Pré-requisitos: JDK 17, Maven 3.8+, Node 20.19+ (ou 22 LTS / 24).
+
+**Backend** (na primeira vez precisa instalar o `ejb-module` no repositório local):
 
 ```bash
 mvn install -DskipTests
 mvn -pl backend-module spring-boot:run
 ```
 
-A aplicação sobe em `http://localhost:8080`.
+API em `http://localhost:8080`, Swagger em `http://localhost:8080/swagger-ui.html`, console H2 em `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:mem:bipdb`, user `sa`, senha vazia).
 
-## Endpoints disponíveis
+**Frontend:**
 
-| URL | O que faz |
-|---|---|
-| `GET /api/v1/beneficios` | (mock — será substituído pelo CRUD real) |
-| `GET /actuator/health` | Health check |
-| `GET /swagger-ui.html` | Swagger UI |
-| `GET /v3/api-docs` | OpenAPI JSON |
-| `GET /v3/api-docs.yaml` | OpenAPI YAML |
-| `GET /h2-console` | Console do H2 — JDBC URL `jdbc:h2:mem:bipdb`, user `sa`, senha vazia |
+```bash
+cd frontend
+npm ci
+npm start
+```
+
+App em `http://localhost:4200`. A URL da API vem de [`src/environments/environment.ts`](frontend/src/environments/environment.ts) (default `http://localhost:8080`) e o backend já libera CORS para `localhost:4200`.
 
 ## Rodar testes
 
 ```bash
-mvn test
+mvn test                          # backend (EJB + REST)
+cd frontend && npm test           # frontend
 ```
 
-Cobertura atual no `ejb-module`:
-- 4 cenários de unidade do `BeneficioEjbService.transfer` (caminho feliz, saldo insuficiente, valor inválido com 5 variações, origem == destino)
-- 1 teste de integração de concorrência (10 threads transferindo simultaneamente, prova que o lock pessimista impede lost update)
+Cobertura:
 
-Total: **9 testes passando**.
+| Módulo | Testes | O que cobre |
+|---|---|---|
+| `ejb-module` | 9 | unidade do `transfer` (caminho feliz, saldo insuficiente, valor inválido em 5 variações, origem == destino) + integração de concorrência (10 threads simultâneas provando que o lock pessimista impede *lost update*) |
+| `backend-module` | 15 | controllers via `@WebMvcTest` — CRUD de benefícios + endpoint de transferência, incluindo erros mapeados para Problem Details |
+| `frontend` | 40 | services de API com `HttpTestingController`, formulário de benefício, página de transferência, simulação, loading/notification |
+
+## Endpoints
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/v1/beneficios` | lista paginada (`?page=&size=&ativo=`) |
+| `GET` | `/api/v1/beneficios/{id}` | detalhe |
+| `POST` | `/api/v1/beneficios` | criar |
+| `PUT` | `/api/v1/beneficios/{id}` | atualizar |
+| `DELETE` | `/api/v1/beneficios/{id}` | desativar (soft delete) |
+| `POST` | `/api/v1/transferencias` | transferir saldo entre dois benefícios ativos |
+| `GET` | `/actuator/health` | health check |
+| `GET` | `/swagger-ui.html` | documentação interativa |
+
+Erros retornam [RFC 7807 Problem Details](https://datatracker.ietf.org/doc/html/rfc7807). Códigos:
+- `400` validação (`MethodArgumentNotValidException`)
+- `404` benefício inexistente
+- `409` `OptimisticLockException`
+- `422` regras de domínio (saldo insuficiente, benefício inativo, transferência inválida)
 
 ## Estrutura
 
 ```
 .
-├── pom.xml                   POM agregador multi-módulo
-├── ejb-module/               lógica de domínio (EJB + JPA)
+├── pom.xml                       POM agregador multi-módulo
+├── ejb-module/                   domínio (EJB + JPA)
 │   └── src/main/java/com/example/ejb/
-│       ├── domain/           entidade Beneficio
-│       ├── service/          BeneficioEjbService (transfer com lock)
-│       └── exception/        exceções de domínio
-├── backend-module/           API REST Spring Boot
+│       ├── domain/               entidade Beneficio (com @Version)
+│       ├── service/              BeneficioEjbService (transfer com lock)
+│       └── exception/            exceções de domínio
+├── backend-module/               API REST Spring Boot
+│   ├── Dockerfile                multi-stage para Fly.io
+│   ├── entrypoint.sh             converte DATABASE_URL (Heroku-style) em SPRING_DATASOURCE_*
 │   └── src/main/java/com/example/backend/
-│       ├── BackendApplication.java
-│       └── controller/       BeneficioController
-├── frontend/                 Angular (placeholder)
-├── db/                       schema/seed originais do template
-└── docs/README.md            especificação original do desafio
+│       ├── config/               CORS, OpenAPI
+│       ├── controller/           BeneficioController, TransferenciaController
+│       ├── dto/                  request/response (entidade nunca exposta)
+│       ├── exception/            GlobalExceptionHandler (Problem Details)
+│       ├── repository/           Spring Data JPA
+│       └── service/              orquestração (delega ao EJB)
+├── frontend/                     Angular 21
+│   └── src/app/
+│       ├── core/                 services de API, interceptors, loading, notification
+│       ├── features/             beneficios (list, form), transferencias (transferir)
+│       └── shared/ui/            componentes reusáveis (picker, simulação)
+├── fly.toml                      config do deploy
+└── docs/                         brief original + OpenAPI
 ```
-
-## Banco
-
-| Profile | Banco | Quando |
-|---|---|---|
-| `dev` (default) | H2 em memória | desenvolvimento local |
-| `test` | H2 em memória | execução dos testes |
-| `prod` | PostgreSQL via `DATABASE_URL` | deploy |
-
-O profile é selecionado pela env var `SPRING_PROFILES_ACTIVE` ou pelo default em `application.yml`.
 
 ## Bug do EJB
 
-O desafio pediu correção do `BeneficioEjbService.transfer`, que originalmente:
-- não validava saldo
-- não usava locking
-- podia gerar inconsistência por lost update
+O `BeneficioEjbService.transfer` original não validava nada e podia gerar *lost update* sob concorrência. A correção em [`ejb-module/src/main/java/com/example/ejb/service/BeneficioEjbService.java`](ejb-module/src/main/java/com/example/ejb/service/BeneficioEjbService.java) cobre:
 
-A correção está em [`ejb-module/src/main/java/com/example/ejb/service/BeneficioEjbService.java`](ejb-module/src/main/java/com/example/ejb/service/BeneficioEjbService.java) e cobre:
-- validação de entrada (`fromId`, `toId`, `amount`)
-- lock pessimista via `LockModeType.PESSIMISTIC_WRITE` (com aquisição em ordem de ID para evitar deadlock)
+- validação de entrada (`fromId`, `toId`, `amount > 0`, `from != to`)
+- carregamento com `LockModeType.PESSIMISTIC_WRITE` em ordem crescente de ID (evita deadlock entre threads cruzadas)
 - validação de benefício ativo e saldo suficiente
-- `@Transactional(rollbackFor = Exception.class)` garantindo rollback inclusive em checked exceptions
+- `@Transactional(rollbackFor = Exception.class)` para garantir rollback em checked exceptions
+- `@Version` na entidade como defesa em profundidade
 
-A entidade mantém também `@Version` como defesa em profundidade (optimistic locking).
+O teste de concorrência em [`BeneficioEjbServiceConcurrencyTest`](ejb-module/src/test/java/com/example/ejb/service/BeneficioEjbServiceConcurrencyTest.java) dispara 10 threads em paralelo via `CountDownLatch` e valida que a soma final é exatamente igual à inicial — prova que o lock funciona.
 
-## Decisão sobre integração EJB
+## Decisões arquiteturais
 
-O `ejb-module` tem a classe anotada `@Stateless` (contrato Jakarta EE), mas é consumida como bean Spring com `@Transactional` em vez de rodar num container EJB tradicional (WildFly/Payara). Decisão pragmática para o escopo do desafio: mantém a separação de camadas e o contrato Jakarta, sem o overhead de subir um container completo.
+**EJB consumido como bean Spring.** O `ejb-module` mantém a anotação `@Stateless` e o contrato Jakarta EE, mas é injetado como bean Spring com `@Transactional` em vez de rodar num container (WildFly/Payara). Decisão pragmática para o escopo: preserva a separação em camadas e o vocabulário Jakarta sem o overhead de um servidor de aplicação.
 
-## Status
+**H2 em todos os profiles.** Para a demo ao vivo, o backend usa H2 em memória. Mantém paridade entre dev/test/prod e elimina a dependência de banco gerenciado para um avaliador rodar localmente. O contrato JPA é o mesmo para qualquer dialeto — trocar para Postgres é mudar `application.yml` e ajustar a connection string.
 
-- [x] Estrutura multi-módulo Maven
-- [x] Entidade `Beneficio` + perfis dev/test/prod
-- [x] Correção do bug do `transfer` com testes
-- [x] Teste de concorrência (lost update)
-- [ ] CRUD real no backend (`Repository`, `Service`, `Controller` reescrito, DTOs, GlobalExceptionHandler)
-- [ ] Frontend Angular consumindo a API
-- [ ] Deploy (Fly.io + Cloudflare Pages)
+**DTOs nas fronteiras.** A entidade `Beneficio` nunca cruza o limite do controller. Request/response têm classes próprias e o mapeamento é explícito.
+
+**Problem Details.** Erros HTTP seguem RFC 7807, com tipos e títulos consistentes. O `error.interceptor.ts` no frontend extrai `detail` e exibe via snackbar.
