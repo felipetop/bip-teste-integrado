@@ -4,6 +4,7 @@ import com.example.backend.dto.BeneficioRequest;
 import com.example.backend.dto.BeneficioResponse;
 import com.example.backend.exception.GlobalExceptionHandler;
 import com.example.backend.service.BeneficioService;
+import com.example.backend.service.TransferenciaService;
 import com.example.ejb.exception.BeneficioNaoEncontradoException;
 import com.example.ejb.service.BeneficioEjbService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,6 +48,9 @@ class BeneficioControllerTest {
 
     @MockBean
     private BeneficioEjbService ejbService;
+
+    @MockBean
+    private TransferenciaService transferenciaService;
 
     @Test
     @DisplayName("GET /api/v1/beneficios retorna lista de BeneficioResponse com campos completos")
