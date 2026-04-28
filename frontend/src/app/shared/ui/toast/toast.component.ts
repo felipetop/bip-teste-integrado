@@ -1,0 +1,36 @@
+import { Component, inject } from '@angular/core';
+import { NotificationService } from '../../../core/services/notification.service';
+
+@Component({
+  selector: 'app-toast',
+  standalone: true,
+  template: `
+    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80">
+      @for (toast of notifier.toasts(); track toast.id) {
+        <div
+          class="rounded-lg px-4 py-3 shadow-lg text-sm flex items-start gap-3 cursor-pointer animate-pulse-once"
+          [class]="
+            toast.type === 'success'
+              ? 'bg-emerald-600 text-white'
+              : toast.type === 'error'
+              ? 'bg-rose-600 text-white'
+              : 'bg-sky-600 text-white'
+          "
+          (click)="notifier.dismiss(toast.id)"
+        >
+          <span class="font-medium">
+            @switch (toast.type) {
+              @case ('success') { ✓ }
+              @case ('error') { ✕ }
+              @default { ℹ }
+            }
+          </span>
+          <span class="flex-1">{{ toast.text }}</span>
+        </div>
+      }
+    </div>
+  `,
+})
+export class ToastComponent {
+  protected notifier = inject(NotificationService);
+}
