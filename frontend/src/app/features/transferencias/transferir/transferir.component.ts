@@ -32,24 +32,24 @@ export class TransferirComponent implements OnInit {
   protected readonly enviando = signal(false);
 
   private readonly ativos = computed(() =>
-    this.beneficioService.beneficios().filter((b) => b.ativo),
+    this.beneficioService.beneficios().filter((beneficio) => beneficio.ativo),
   );
 
   protected readonly opcoesOrigem = computed(() =>
-    this.ativos().filter((b) => b.id !== this.destino()?.id),
+    this.ativos().filter((beneficio) => beneficio.id !== this.destino()?.id),
   );
 
   protected readonly opcoesDestino = computed(() =>
-    this.ativos().filter((b) => b.id !== this.origem()?.id),
+    this.ativos().filter((beneficio) => beneficio.id !== this.origem()?.id),
   );
 
   protected readonly valor = computed(() => this.amount() ?? 0);
 
   protected readonly podeEnviar = computed(() => {
-    const o = this.origem();
-    const d = this.destino();
-    const v = this.valor();
-    return !!o && !!d && v > 0 && o.valor >= v;
+    const origem = this.origem();
+    const destino = this.destino();
+    const valor = this.valor();
+    return !!origem && !!destino && valor > 0 && origem.valor >= valor;
   });
 
   ngOnInit(): void {
