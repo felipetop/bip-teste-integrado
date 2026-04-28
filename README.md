@@ -1,6 +1,6 @@
-# Desafio Sicoob — Fullstack Integrado
+# Desafio Fullstack Integrado
 
-Solução do desafio técnico de fullstack proposto pela BIP. Stack em camadas com EJB + Spring Boot + Angular consumindo H2 (dev/test) e Postgres (prod).
+Solução do desafio técnico de fullstack. Stack em camadas com EJB + Spring Boot + Angular consumindo H2 (dev/test) e Postgres (prod).
 
 A especificação original do desafio está em [`docs/README.md`](docs/README.md). O contrato OpenAPI da API está versionado em [`docs/openapi.yaml`](docs/openapi.yaml) e pode ser importado em ferramentas como Postman, Insomnia ou usado para gerar clientes (TypeScript, etc.).
 
