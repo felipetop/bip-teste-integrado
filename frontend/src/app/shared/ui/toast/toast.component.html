@@ -1,7 +1,8 @@
 <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-80">
   @for (toast of notifier.toasts(); track toast.id) {
-    <div
-      class="rounded-lg px-4 py-3 shadow-lg text-sm flex items-start gap-3 cursor-pointer"
+    <button
+      type="button"
+      class="rounded-lg px-4 py-3 shadow-lg text-sm flex items-start gap-3 cursor-pointer text-left w-full"
       [class]="
         toast.type === 'success'
           ? 'bg-emerald-600 text-white'
@@ -19,6 +20,6 @@
         }
       </span>
       <span class="flex-1">{{ toast.text }}</span>
-    </div>
+    </button>
   }
 </div>
