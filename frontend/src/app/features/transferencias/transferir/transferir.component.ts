@@ -7,12 +7,13 @@ import { BeneficioService } from '../../../core/api/beneficio.service';
 import { BeneficioResponse } from '../../../core/api/models';
 import { TransferenciaService } from '../../../core/api/transferencia.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { BeneficiosPickerComponent } from '../../../shared/ui/beneficios-picker/beneficios-picker.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 
 @Component({
   selector: 'app-transferir',
   standalone: true,
-  imports: [FormsModule, CurrencyPipe, ButtonComponent, NgxMaskDirective],
+  imports: [FormsModule, CurrencyPipe, ButtonComponent, NgxMaskDirective, BeneficiosPickerComponent],
   templateUrl: './transferir.component.html',
 })
 export class TransferirComponent implements OnInit {

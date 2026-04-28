@@ -8,41 +8,14 @@
 
   <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr] gap-6 items-stretch">
 
-    <!-- Coluna ORIGEM -->
-    <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col">
-      <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">Origem</h2>
-      <input
-        type="text"
-        [value]="buscaOrigem()"
-        (input)="buscaOrigem.set($any($event.target).value)"
-        placeholder="Buscar origem..."
-        class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 mb-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
-      />
-      <div class="space-y-2 overflow-y-auto max-h-96 pr-1">
-        @for (b of opcoesOrigem(); track b.id) {
-          <button
-            type="button"
-            (click)="selecionarOrigem(b.id)"
-            [class]="fromId() === b.id
-              ? 'w-full text-left rounded-md border border-sky-500 bg-sky-500/10 p-3 transition-all'
-              : 'w-full text-left rounded-md border border-slate-700 bg-slate-900/50 p-3 hover:border-slate-500 hover:bg-slate-700/50 transition-all'"
-          >
-            <div class="flex items-center justify-between">
-              <span class="font-medium text-slate-100">{{ b.nome }}</span>
-              @if (fromId() === b.id) {
-                <span class="text-sky-400 text-xs">✓ selecionado</span>
-              }
-            </div>
-            <div class="text-xs text-slate-400 mt-0.5 truncate">{{ b.descricao }}</div>
-            <div class="text-emerald-400 text-sm font-medium tabular-nums mt-1">
-              {{ b.valor | currency: 'BRL' }}
-            </div>
-          </button>
-        } @empty {
-          <p class="text-slate-500 text-sm text-center py-8">Nenhum benefício encontrado.</p>
-        }
-      </div>
-    </div>
+    <app-beneficios-picker
+      titulo="Origem"
+      placeholder="Buscar origem..."
+      [opcoes]="opcoesOrigem()"
+      [selectedId]="fromId()"
+      [(searchTerm)]="buscaOrigem"
+      (selecionado)="selecionarOrigem($event)"
+    />
 
     <!-- Coluna CENTRAL: seta + valor + simulação -->
     <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col items-center justify-center space-y-5">
@@ -109,41 +82,14 @@
       }
     </div>
 
-    <!-- Coluna DESTINO -->
-    <div class="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col">
-      <h2 class="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">Destino</h2>
-      <input
-        type="text"
-        [value]="buscaDestino()"
-        (input)="buscaDestino.set($any($event.target).value)"
-        placeholder="Buscar destino..."
-        class="w-full bg-slate-900 border border-slate-700 rounded-md px-3 py-2 mb-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
-      />
-      <div class="space-y-2 overflow-y-auto max-h-96 pr-1">
-        @for (b of opcoesDestino(); track b.id) {
-          <button
-            type="button"
-            (click)="selecionarDestino(b.id)"
-            [class]="toId() === b.id
-              ? 'w-full text-left rounded-md border border-sky-500 bg-sky-500/10 p-3 transition-all'
-              : 'w-full text-left rounded-md border border-slate-700 bg-slate-900/50 p-3 hover:border-slate-500 hover:bg-slate-700/50 transition-all'"
-          >
-            <div class="flex items-center justify-between">
-              <span class="font-medium text-slate-100">{{ b.nome }}</span>
-              @if (toId() === b.id) {
-                <span class="text-sky-400 text-xs">✓ selecionado</span>
-              }
-            </div>
-            <div class="text-xs text-slate-400 mt-0.5 truncate">{{ b.descricao }}</div>
-            <div class="text-emerald-400 text-sm font-medium tabular-nums mt-1">
-              {{ b.valor | currency: 'BRL' }}
-            </div>
-          </button>
-        } @empty {
-          <p class="text-slate-500 text-sm text-center py-8">Nenhum benefício encontrado.</p>
-        }
-      </div>
-    </div>
+    <app-beneficios-picker
+      titulo="Destino"
+      placeholder="Buscar destino..."
+      [opcoes]="opcoesDestino()"
+      [selectedId]="toId()"
+      [(searchTerm)]="buscaDestino"
+      (selecionado)="selecionarDestino($event)"
+    />
   </div>
 
   <div class="flex items-center justify-end gap-2">
