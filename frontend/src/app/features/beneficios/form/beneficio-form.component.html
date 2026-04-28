@@ -1,4 +1,4 @@
-<section class="max-w-2xl mx-auto px-6 py-8 space-y-6">
+<section class="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
   <header>
     <h1 class="text-2xl font-semibold text-slate-100">
       {{ modoEditar() ? 'Editar benefício' : 'Novo benefício' }}
@@ -8,7 +8,7 @@
     </p>
   </header>
 
-  <form [formGroup]="form" (ngSubmit)="salvar()" class="space-y-5 bg-slate-800 border border-slate-700 rounded-lg p-6">
+  <form [formGroup]="form" (ngSubmit)="salvar()" class="space-y-5 bg-slate-800 border border-slate-700 rounded-lg p-4 sm:p-6">
     <div class="space-y-2">
       <label for="nome" class="block text-sm font-medium text-slate-300">Nome</label>
       <input
@@ -77,7 +77,7 @@
       <label for="ativo" class="text-sm text-slate-300">Ativo</label>
     </div>
 
-    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-700">
+    <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 border-t border-slate-700">
       <app-button variant="ghost" (click)="cancelar()">Cancelar</app-button>
       <app-button type="submit" variant="primary" [loading]="enviando()" [disabled]="form.invalid">
         {{ modoEditar() ? 'Salvar alterações' : 'Criar benefício' }}

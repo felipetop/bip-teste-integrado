@@ -1,4 +1,4 @@
-<section class="max-w-7xl mx-auto px-6 py-8 space-y-6">
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
   <header>
     <h1 class="text-2xl font-semibold text-slate-100">Transferir entre benefícios</h1>
     <p class="text-slate-400 text-sm mt-1">
@@ -6,7 +6,7 @@
     </p>
   </header>
 
-  <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr] gap-6 items-stretch">
+  <div class="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr] gap-4 sm:gap-6 items-stretch">
 
     <app-beneficios-picker
       titulo="Origem"
@@ -31,7 +31,7 @@
     />
   </div>
 
-  <div class="flex items-center justify-end gap-2">
+  <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
     <app-button variant="ghost" (click)="cancelar()">Cancelar</app-button>
     <app-button
       type="button"
