@@ -4,7 +4,7 @@
       <h1 class="text-2xl font-semibold text-slate-100">Benefícios</h1>
       <p class="text-slate-400 text-sm">Gerencie os benefícios disponíveis para transferência.</p>
     </div>
-    <app-button variant="primary">
+    <app-button variant="primary" (click)="novo()">
       + Novo benefício
     </app-button>
   </header>
@@ -41,7 +41,7 @@
               </span>
             </td>
             <td class="px-4 py-3 text-right space-x-2">
-              <app-button variant="ghost" size="sm">Editar</app-button>
+              <app-button variant="ghost" size="sm" (click)="editar(b.id)">Editar</app-button>
               @if (b.ativo) {
                 <app-button variant="danger" size="sm" (click)="desativar(b.id)">
                   Desativar

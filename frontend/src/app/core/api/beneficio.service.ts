@@ -14,6 +14,10 @@ export class BeneficioService {
   readonly loading = this._loading.asReadonly();
   readonly ativos = computed(() => this._beneficios().filter((b) => b.ativo));
 
+  obterPorId(id: number) {
+    return this.repository.findById(id);
+  }
+
   carregar(): void {
     this._loading.set(true);
     this.repository.findAll().subscribe({
