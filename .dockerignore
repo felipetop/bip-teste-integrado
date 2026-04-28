@@ -1,0 +1,15 @@
+**/target/
+**/node_modules/
+**/dist/
+**/.angular/
+.git/
+.github/
+.idea/
+.vscode/
+.claude/
+frontend/
+docs/
+*.log
+*.md
+.gitignore
+.dockerignore
