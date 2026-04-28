@@ -58,9 +58,11 @@ App em `http://localhost:4200`. A URL da API vem de [`src/environments/environme
 ## Rodar testes
 
 ```bash
-mvn test                          # backend (EJB + REST)
-cd frontend && npm test           # frontend
+mvn test                              # backend (EJB + REST)
+cd frontend && npm run test:ci        # frontend (single-run)
 ```
+
+> Em desenvolvimento ativo, use `npm test` (watch mode).
 
 Cobertura:
 
